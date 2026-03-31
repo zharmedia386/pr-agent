@@ -322,6 +322,15 @@ async def handle_request(body: Dict[str, Any], event: str):
     if not action:
         get_logger().debug(f"No action found in request body, exiting handle_request")
         return {}
+    # Re-seed context for background task execution, where request-scoped context may not propagate.
+    try:
+        context["installation_id"] = body.get("installation", {}).get("id")
+        if context.get("settings", None) is None:
+            context["settings"] = copy.deepcopy(global_settings)
+        if context.get("git_provider", None) is None:
+            context["git_provider"] = {}
+    except Exception:
+        pass
     agent = PRAgent()
     log_context, sender, sender_id, sender_type = get_log_context(body, event, action, build_number)
 
